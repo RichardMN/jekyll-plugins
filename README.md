@@ -32,6 +32,10 @@ Customizations:
 ---------------
 If you want to include the optional changefreq and priority attributes, simply include custom variables in the YAML Front Matter of those files. The names of these custom variables are defined in the config file as `sitemap: change_frequency_name:` and `sitemap: priority_name:`.
 
+Internationalization:
+---------------------
+If you have [internationalized your jekyll site](https://www.sylvaindurand.org/making-jekyll-multilingual/) by the method described by Sylvain Durand, the plugin will look at the `lang` and `ref` tags of pages (not posts) and generate the correct `alternate` links in the sitemap.
+
 Notes:
 ------
 1. The last modified date is determined by the latest date of the following: system modified date of the page or post, system modified date of included layout, system modified date of included layout within that layout, ...

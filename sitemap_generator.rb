@@ -1,11 +1,11 @@
-# Sitemap.xml Generator is a Jekyll plugin that generates a sitemap.xml file by 
+# Sitemap.xml Generator is a Jekyll plugin that generates a sitemap.xml file by
 # traversing all of the available posts and pages.
-# 
+#
 # See readme file for documenation
-# 
+#
 # Updated to use config file for settings by Daniel Groves
 # Site: http://danielgroves.net
-# 
+#
 # Author: Michael Levin
 # Site: http://www.kinnetica.com
 # Distributed Under A Creative Commons License
@@ -53,13 +53,13 @@ module Jekyll
     # Config defaults
     SITEMAP_FILE_NAME = "/sitemap.xml"
     EXCLUDE = ["/atom.xml", "/feed.xml", "/feed/index.xml"]
-    INCLUDE_POSTS = ["/index.html"] 
+    INCLUDE_POSTS = ["/index.html"]
     CHANGE_FREQUENCY_NAME = "change_frequency"
     PRIORITY_NAME = "priority"
-    
+
     # Valid values allowed by sitemap.xml spec for change frequencies
     VALID_CHANGE_FREQUENCY_VALUES = ["always", "hourly", "daily", "weekly",
-      "monthly", "yearly", "never"] 
+      "monthly", "yearly", "never"]
 
     # Goes through pages and posts and generates sitemap.xml file
     #
@@ -77,8 +77,10 @@ module Jekyll
       sitemap = REXML::Document.new << REXML::XMLDecl.new("1.0", "UTF-8")
 
       urlset = REXML::Element.new "urlset"
-      urlset.add_attribute("xmlns", 
+      urlset.add_attribute("xmlns",
         "http://www.sitemaps.org/schemas/sitemap/0.9")
+      urlset.add_attribute("xmlns:xhtml",
+        "http://www.w3.org/1999/xhtml")
 
       @last_modified_post_date = fill_posts(site, urlset)
       fill_pages(site, urlset)
@@ -147,12 +149,10 @@ module Jekyll
       lastmod = fill_last_modified(site, page_or_post)
       url.add_element(lastmod) if lastmod
 
-
-
       if (page_or_post.data[@config['change_frequency_name']])
-        change_frequency = 
+        change_frequency =
           page_or_post.data[@config['change_frequency_name']].downcase
-          
+
         if (valid_change_frequency?(change_frequency))
           changefreq = REXML::Element.new "changefreq"
           changefreq.text = change_frequency
@@ -173,15 +173,45 @@ module Jekyll
         end
       end
 
+      # attempt to do hreflang versions
+      #
+      # This code loops through all pages in the site to find other pages
+      # which have the same 'ref' in their frontmatter.
+      # For each of these, it will output a correct alternate
+      # link based on the other page's 'lang' attribute and the
+      # other page's url.
+      # Result: a sitemap.xml which reflects the links between pages of a
+      # multilingual site.
+      if (page_or_post.data['lang'] && page_or_post.data['ref'])
+        pagelang = page_or_post.data['lang']
+        pageref = page_or_post.data['ref']
+        # This only searches through other pages in the site,
+        # assuming that posts will not be translated. The loop could be
+        # modified to apply to all posts as well.
+        site.pages.each do |page|
+          if (page.data['ref'] && page.data['lang'])
+            if (pageref == page.data['ref'])
+              hreflang = REXML::Element.new "xhtml:link"
+              hreflang.add_attribute("rel", "alternate")
+              hreflang.add_attribute("hreflangrel", page.data['lang'])
+              location_url = site.config['url'] #+ site.config['baseurl']
+              location_text = page.location_on_server(location_url)
+              hreflang.add_attribute("href", location_text)
+              url.add_element(hreflang)
+            end
+          end
+        end
+      end
       url
     end
 
-    # Get URL location of page or post 
+    # Get URL location of page or post
     #
     # Returns the location of the page or post
     def fill_location(site, page_or_post)
       loc = REXML::Element.new "loc"
       url = site.config['url'] + site.config['baseurl']
+      #url = site.config['url']
       loc.text = page_or_post.location_on_server(url)
 
       loc
@@ -233,10 +263,10 @@ module Jekyll
     #
     # Returns latest of two dates
     def greater_date(date1, date2)
-      if (date1 >= date2) 
+      if (date1 >= date2)
         date1
-      else 
-        date2 
+      else
+        date2
       end
     end
 
